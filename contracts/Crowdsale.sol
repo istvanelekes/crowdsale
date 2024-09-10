@@ -9,6 +9,7 @@ contract Crowdsale {
     uint256 public price;
     uint256 public maxTokens;
     uint256 public tokensSold;
+    uint256 public closingTimestamp;
 
     mapping (address => bool) private whitelistedUsers;
 
@@ -20,6 +21,9 @@ contract Crowdsale {
         token = _token;
         price = _price;
         maxTokens = _maxTokens;
+
+        // is open for 7 days
+        closingTimestamp = block.timestamp + 7*24*60*60;
     }
 
     modifier onlyOwner() {
@@ -48,6 +52,7 @@ contract Crowdsale {
     function buyTokens(uint256 _amount) public payable onlyWhitelisted {
         require(msg.value == (_amount / 1e18) * price);
         require(token.balanceOf(address(this)) >= _amount);
+        require(block.timestamp < closingTimestamp);
         require(token.transfer(msg.sender, _amount));
 
         tokensSold += _amount;

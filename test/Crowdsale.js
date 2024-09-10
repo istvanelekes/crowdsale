@@ -77,14 +77,30 @@ describe('Crowdsale', () => {
             })
 
             it('emits a buy event', async () => {
+                // --> https://hardhat.org/hardhat-chai-matchers/docs/reference#.emit
                 await expect(transaction).to.emit(crowdsale, 'Buy').withArgs(amount, user1.address)
+            })
+            
+            it('buy tokens just before closing date', async () => {
+                const sevenDaysMinusOneHour = 6 * 23 * 60 * 60;
+                await ethers.provider.send('evm_increaseTime', [sevenDaysMinusOneHour]);
+                await ethers.provider.send('evm_mine');
+
+                await expect(crowdsale.connect(user1).buyTokens(amount, { value: ether(10) })).to.changeTokenBalance(token, user1, amount)
             })
         })
 
         describe('Failure', () => {
             it('rejects insufficient ETH', async () => {
-                const invalidAmount = tokens(100000000)
                 await expect(crowdsale.connect(user1).buyTokens(tokens(10), { value: 0 })).to.be.reverted
+            })
+
+            it('buy tokens after closing date', async () => {
+                const sevenDays = 7 * 24 * 60 * 60;
+                await ethers.provider.send('evm_increaseTime', [sevenDays]);
+                await ethers.provider.send('evm_mine');
+
+                await expect(crowdsale.connect(user1).buyTokens(amount, { value: ether(10) })).to.be.reverted
             })
         })    
     })
@@ -187,8 +203,7 @@ describe('Crowdsale', () => {
             })
 
             it('buy tokens with user1', async () => {
-                transaction = await crowdsale.connect(user1).buyTokens(amount, { value: value })
-                result = await transaction.wait()
+                await expect(crowdsale.connect(user1).buyTokens(amount, { value: value })).to.changeTokenBalance(token, user1, amount)                
             })
         })
 
