@@ -55,6 +55,10 @@ describe('Crowdsale', () => {
 
         describe('Success', () => {
             beforeEach(async () => {
+                // Add user1 to crowdsale whitelist
+                transaction = await crowdsale.connect(deployer).addToWhitelist(user1.address)
+                result = await transaction.wait()
+
                 transaction = await crowdsale.connect(user1).buyTokens(amount, { value: ether(10) })
                 result = await transaction.wait()
             })
@@ -91,6 +95,10 @@ describe('Crowdsale', () => {
 
         describe('Success', () => {
             beforeEach(async () => {
+                // Add user1 to crowdsale whitelist
+                transaction = await crowdsale.connect(deployer).addToWhitelist(user1.address)
+                result = await transaction.wait()
+
                 transaction = await user1.sendTransaction({ to: crowdsale.address, value: amount })
                 result = await transaction.wait()
             })
@@ -134,6 +142,10 @@ describe('Crowdsale', () => {
 
         describe('Success', () => {
             beforeEach(async () => {
+                // Add user1 to crowdsale whitelist
+                transaction = await crowdsale.connect(deployer).addToWhitelist(user1.address)
+                result = await transaction.wait()
+
                 transaction = await crowdsale.connect(user1).buyTokens(amount, { value: value })
                 result = await transaction.wait()
 
@@ -158,6 +170,35 @@ describe('Crowdsale', () => {
         describe('Failure', () => {
             it('prevents non-owner from finalizing', async () => {
                 await expect(crowdsale.connect(user1).finalize()).to.be.reverted
+            })
+        })    
+    })
+
+    describe('Add to Whitelist', () => {
+        let transaction, result
+        let value = ether(10)
+        let amount = tokens(10)
+
+        describe('Success', () => {
+            beforeEach(async () => {
+                // Add user1 to crowdsale whitelist
+                transaction = await crowdsale.connect(deployer).addToWhitelist(user1.address)
+                result = await transaction.wait()
+            })
+
+            it('buy tokens with user1', async () => {
+                transaction = await crowdsale.connect(user1).buyTokens(amount, { value: value })
+                result = await transaction.wait()
+            })
+        })
+
+        describe('Failure', () => {
+            it('prevents non-whitelisted to buy tokens', async () => {
+                await expect(crowdsale.connect(user1).buyTokens(amount, { value: value })).to.be.reverted
+            })
+
+            it('prevents non-owner from whitelisting', async () => {
+                await expect(crowdsale.connect(user1).addToWhitelist(user1.address)).to.be.reverted
             })
         })    
     })
