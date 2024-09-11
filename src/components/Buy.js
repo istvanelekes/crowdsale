@@ -6,9 +6,9 @@ import Spinner from 'react-bootstrap/Spinner';
 import { useState } from 'react';
 import { ethers } from 'ethers';
 
-const Buy = ({ provider, price, crowdsale, setIsLoading }) => {
+const Buy = ({ provider, price, crowdsale, setIsLoading, closingTimestamp }) => {
 
-    const [amount, setAmount] = useState('0')
+    const [amount, setAmount] = useState('')
     const [userToWhitelist, setUserToWhitelist] = useState('0x')
     const [isWaiting, setIsWaiting] = useState(false)
 
@@ -18,14 +18,21 @@ const Buy = ({ provider, price, crowdsale, setIsLoading }) => {
 
         try {
             const signer = provider.getSigner()
+
+            const block = await provider.getBlock('latest')
+
+            if (block.timestamp >= closingTimestamp) {
+                throw 'Crowdsale is closed!'
+            }
             
             const value = ethers.utils.parseUnits((amount*price).toString(), 'ether')
             const formattedAmount = ethers.utils.parseUnits(amount.toString(), 'ether')
 
             const transaction = await crowdsale.connect(signer).buyTokens(formattedAmount, { value: value })
             await transaction.wait()
-        } catch {
-            window.alert('User rejected or transaction reverted')
+        } catch (error) {
+            console.error('Error occured: ', error)
+            window.alert('User rejected or transaction reverted\n', error.message)
         }
 
         setIsLoading(true)
@@ -58,7 +65,7 @@ const Buy = ({ provider, price, crowdsale, setIsLoading }) => {
                         <Spinner animation="border"/>
                     ) : (
                         <>
-                        <Button variant="primary" type="submit" style={{ width: '100%'}}>
+                        <Button disabled={amount.length === 0} variant="primary" type="submit" style={{ width: '100%'}}>
                             Buy Tokens
                         </Button>
 

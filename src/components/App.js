@@ -24,6 +24,7 @@ function App() {
     const [account, setAccount] = useState(null)
     const [accountBalance, setAccountBalance] = useState(0)
 
+    const [closingTimestamp, setClosingTimestamp] = useState(0)
     const [price, setPrice] = useState(0)
     const [maxTokens, setMaxTokens] = useState(0)
     const [tokensSold, setTokensSold] = useState(0)
@@ -50,6 +51,9 @@ function App() {
         // Fetch account balance
         const accountBalance = ethers.utils.formatUnits(await token.balanceOf(account), 18)
         setAccountBalance(accountBalance)
+
+        const closingTimestamp = await crowdsale.closingTimestamp()
+        setClosingTimestamp(closingTimestamp)
 
         const price = ethers.utils.formatUnits(await crowdsale.price(), 18)
         setPrice(price)
@@ -80,7 +84,7 @@ function App() {
             ) : (
                 <>
                     <p className='text-center'><strong>Current Price:</strong> {price} ETH</p>
-                    <Buy provider={provider} price={price} crowdsale={crowdsale} setIsLoading={setIsLoading} />
+                    <Buy provider={provider} price={price} crowdsale={crowdsale} setIsLoading={setIsLoading} closingTimestamp={closingTimestamp}/>
                     <Progress maxTokens={maxTokens} tokensSold={tokensSold} />
                 </>
             )}
@@ -88,7 +92,7 @@ function App() {
             <hr/>
 
             {account && (
-                <Info account = {account} accountBalance = {accountBalance} />
+                <Info account = {account} accountBalance = {accountBalance} expiryTimestamp={new Date(closingTimestamp * 1000)} />
             )}
         </Container>
     )
