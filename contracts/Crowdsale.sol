@@ -10,17 +10,21 @@ contract Crowdsale {
     uint256 public maxTokens;
     uint256 public tokensSold;
     uint256 public closingTimestamp;
+    uint256 public minContribution;
+    uint256 public maxContribution;
 
     mapping (address => bool) private whitelistedUsers;
 
     event Buy(uint256 amount, address buyer);
     event Finalize(uint256 tokensSold, uint256 ethRaised);
 
-    constructor(Token _token, uint256 _price, uint256 _maxTokens) {
+    constructor(Token _token, uint256 _price, uint256 _maxTokens, uint256 _minContribution, uint256 _maxContribution) {
         owner = msg.sender;
         token = _token;
         price = _price;
         maxTokens = _maxTokens;
+        minContribution = _minContribution;
+        maxContribution = _maxContribution;
 
         // is open for 7 days
         closingTimestamp = block.timestamp + 7*24*60*60;
@@ -50,6 +54,8 @@ contract Crowdsale {
     }
 
     function buyTokens(uint256 _amount) public payable onlyWhitelisted {
+        require(_amount >= minContribution, 'Amount must be bigger than min contribution');
+        require(_amount <= maxContribution, 'Amount must be smaller than max contribution');
         require(msg.value == (_amount / 1e18) * price);
         require(token.balanceOf(address(this)) >= _amount);
         require(block.timestamp < closingTimestamp);

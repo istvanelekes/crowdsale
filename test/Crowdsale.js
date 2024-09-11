@@ -10,6 +10,10 @@ describe('Crowdsale', () => {
     let crowdsale, token
     let accounts, deployer, user1
 
+    const MAX_SUPPLY = '1000000'
+    const MIN_CONTRIBUTION = '10'
+    const MAX_CONTRIBUTION = '9000'
+
     beforeEach(async () => {
         const Crowdsale = await ethers.getContractFactory('Crowdsale')
         const Token = await ethers.getContractFactory('Token')
@@ -23,7 +27,13 @@ describe('Crowdsale', () => {
         user1 = accounts[1]
 
         // Deploy Crowdsale
-        crowdsale = await Crowdsale.deploy(token.address, ether(1), '1000000')
+        crowdsale = await Crowdsale.deploy(
+            token.address, 
+            ether(1), 
+            ethers.utils.parseUnits(MAX_SUPPLY, 'ether'),
+            ethers.utils.parseUnits(MIN_CONTRIBUTION, 'ether'),
+            ethers.utils.parseUnits(MAX_CONTRIBUTION, 'ether')
+        )
 
         // Send tokens to crowdsale
         let transaction = await token.connect(deployer).transfer(crowdsale.address, tokens(1000000))
@@ -45,7 +55,7 @@ describe('Crowdsale', () => {
         })
 
         it('returns the maxTokens', async () => {
-            expect(await crowdsale.maxTokens()).to.equal('1000000')
+            expect(await crowdsale.maxTokens()).to.equal(ethers.utils.parseUnits(MAX_SUPPLY, 'ether'))
         })
     })
 
@@ -93,6 +103,14 @@ describe('Crowdsale', () => {
         describe('Failure', () => {
             it('rejects insufficient ETH', async () => {
                 await expect(crowdsale.connect(user1).buyTokens(tokens(10), { value: 0 })).to.be.reverted
+            })
+
+            it('rejects smaller than min contribution', async () => {
+                await expect(crowdsale.connect(user1).buyTokens(tokens(9), { value: ether(9) })).to.be.reverted
+            })
+
+            it('rejects bigger than max contribution', async () => {
+                await expect(crowdsale.connect(user1).buyTokens(tokens(9001), { value: ether(9001) })).to.be.reverted
             })
 
             it('buy tokens after closing date', async () => {
